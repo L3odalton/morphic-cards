@@ -57,6 +57,7 @@ export abstract class MorphicCard<
     css`
       :host {
         display: block;
+        block-size: 100%;
       }
       .morphic-root {
         container-type: inline-size;
