@@ -195,9 +195,13 @@ export abstract class MorphicCard<
     this.accent = deriveAccentTokens(seed, isDark);
     applyAccentTokens(this, this.accent);
 
-    if (typeof this._config.accent_intensity === "number") {
-      this.style.setProperty(TOKENS.accentFillIntensity, String(this._config.accent_intensity));
-    }
+    const intensity =
+      typeof this._config.accent_intensity === "number"
+        ? this._config.accent_intensity
+        : isDark
+          ? 0.14
+          : 0.04;
+    this.style.setProperty(TOKENS.accentFillIntensity, String(intensity));
     setFlatFill(this, Boolean(this._config.flat_fill));
   }
 

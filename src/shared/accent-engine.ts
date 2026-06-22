@@ -117,7 +117,7 @@ export function deriveAccentTokens(seed: Argb, isDark: boolean): AccentTokens {
   return {
     accent: hexFromArgb(withTone(seed, 40)),
     onAccent: hexFromArgb(withTone(seed, 100)),
-    accentContainer: hexFromArgb(withToneChroma(seed, 90, 36)),
+    accentContainer: hexFromArgb(withToneChroma(seed, 92, 30)),
     onAccentContainer: hexFromArgb(withTone(seed, 10)),
   };
 }
