@@ -69,7 +69,6 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
   }
 
   private _cleanupActions?: () => void;
-  private _heightObserver?: ResizeObserver;
 
   // ---- Entity helpers ------------------------------------------------------
 
@@ -140,30 +139,12 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
   protected override firstUpdated(): void {
     super.firstUpdated();
     this._bindIconActions();
-    this._observeHeight();
   }
 
   override disconnectedCallback(): void {
     super.disconnectedCallback();
     this._cleanupActions?.();
     this._cleanupActions = undefined;
-    this._heightObserver?.disconnect();
-    this._heightObserver = undefined;
-  }
-
-  private _observeHeight(): void {
-    const root = this.shadowRoot?.querySelector<HTMLElement>(".morphic-root");
-    if (!root || this._heightObserver) return;
-    this._heightObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const h = entry.contentRect.height;
-        const bucket = h < 80 ? "compact" : h < 140 ? "medium" : h < 220 ? "tall" : "x-tall";
-        if (root.dataset.height !== bucket) {
-          root.dataset.height = bucket;
-        }
-      }
-    });
-    this._heightObserver.observe(root);
   }
 
   private _bindIconActions(): void {
@@ -366,40 +347,40 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
         .subtitle { font-size: 0.82rem; }
       }
 
-      /* ---- Height breakpoints (ResizeObserver data-height) ---- */
-      .morphic-root[data-height="medium"] {
-        padding: 12px 16px;
-      }
-      .morphic-root[data-height="medium"] .person-row {
-        gap: 14px;
-      }
-      :host(:has(.morphic-root[data-height="medium"])) {
+      /* ---- Height breakpoints (base card sets data-height on :host) ---- */
+      :host([data-height="medium"]) {
         --_icon: 48px;
         --_bubble: 14px;
       }
-
-      .morphic-root[data-height="tall"] {
-        padding: 16px;
+      :host([data-height="medium"]) .morphic-root {
+        padding: 12px 16px;
       }
-      :host(:has(.morphic-root[data-height="tall"])) {
+      :host([data-height="medium"]) .person-row {
+        gap: 14px;
+      }
+
+      :host([data-height="tall"]) {
         --_icon: 64px;
         --_bubble: 16px;
       }
-      .morphic-root[data-height="tall"] .title {
+      :host([data-height="tall"]) .morphic-root {
+        padding: 16px;
+      }
+      :host([data-height="tall"]) .title {
         font-size: 1.1rem;
       }
 
-      .morphic-root[data-height="x-tall"] {
-        padding: 20px;
-      }
-      :host(:has(.morphic-root[data-height="x-tall"])) {
+      :host([data-height="x-tall"]) {
         --_icon: 80px;
         --_bubble: 18px;
       }
-      .morphic-root[data-height="x-tall"] .title {
+      :host([data-height="x-tall"]) .morphic-root {
+        padding: 20px;
+      }
+      :host([data-height="x-tall"]) .title {
         font-size: 1.2rem;
       }
-      .morphic-root[data-height="x-tall"] .subtitle {
+      :host([data-height="x-tall"]) .subtitle {
         font-size: 0.9rem;
       }
     `,
