@@ -14,26 +14,32 @@ const isProd = !isWatch;
  */
 function autoDeployOnWatch() {
   let uploader = null;
-  let warned = false;
+  let announced = false;
   return {
     name: "morphic-auto-deploy",
-    async writeBundle() {
-      if (!isWatch) return;
+    async buildStart() {
+      if (!isWatch || announced) return;
+      announced = true;
       try {
-        if (!uploader) {
-          uploader = await import("./scripts/sftp.mjs");
-        }
+        uploader = await import("./scripts/sftp.mjs");
+        const cfg = uploader.loadConfig();
+        console.log(
+          `\n[morphic] dev auto-deploy → ${cfg.user}@${cfg.host}:${cfg.remotePath}\n`,
+        );
+      } catch (err) {
+        uploader = null;
+        console.warn(
+          `\n[morphic] dev auto-deploy DISABLED: ${err.message}\n` +
+            `[morphic] copy .env.deploy.example to .env.deploy to enable live push.\n`,
+        );
+      }
+    },
+    async writeBundle() {
+      if (!isWatch || !uploader) return;
+      try {
         await uploader.uploadDist({ source: "dev-watch" });
       } catch (err) {
-        if (!warned) {
-          warned = true;
-          console.warn(
-            `\n[morphic] dev auto-deploy skipped: ${err.message}\n` +
-              `[morphic] copy .env.deploy.example to .env.deploy to enable live push.\n`,
-          );
-        } else {
-          console.warn(`[morphic] dev auto-deploy failed: ${err.message}`);
-        }
+        console.warn(`[morphic] dev auto-deploy failed: ${err.message}`);
       }
     },
   };
@@ -59,6 +65,7 @@ export default {
         sourceMap: !isProd,
       },
     }),
+    autoDeployOnWatch(),
     isProd &&
       terser({
         ecma: 2020,

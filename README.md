@@ -62,10 +62,14 @@ npm run build      # production bundle -> dist/morphic.js
 
    | Key | Meaning |
    |---|---|
-   | `MORPHIC_SSH_HOST` / `MORPHIC_SSH_PORT` / `MORPHIC_SSH_USER` | SSH target |
-   | `MORPHIC_SSH_KEY` (+ `MORPHIC_SSH_PASSPHRASE`) | key-file auth (recommended) |
-   | `MORPHIC_SSH_PASSWORD` | password auth (used only if no key) |
+   | `MORPHIC_SSH_HOST` | SSH hostname |
+   | `MORPHIC_SSH_PORT` | SSH port (default 22) |
+   | `MORPHIC_SSH_USER` | SSH user |
    | `MORPHIC_REMOTE_PATH` | e.g. `/config/www/morphic` |
+
+   Auth uses your **SSH agent** only — the same mechanism as `ssh user@host`. No key
+   files or passwords in `.env.deploy`. If SSH doesn't work from your shell, deploy won't
+   either.
 
 2. Commands:
 

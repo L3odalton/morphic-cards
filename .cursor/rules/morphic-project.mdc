@@ -43,7 +43,7 @@ reflects M3 Expressive's signature shape-morphing.
 
 ## Deploy workflow
 - Secrets live in a **gitignored `.env.deploy`** (template: `.env.deploy.example`):
-  SSH host/port/user, key-or-password auth, remote path (e.g. `/config/www/morphic`).
+  SSH host/port/user and remote path (e.g. `/config/www/morphic`). Auth is SSH-agent only.
 - `npm run build` → Rollup prod build to `/dist`.
 - `npm run deploy` → build, then SFTP `/dist` to remote.
 - `npm run dev` → Rollup watch; auto-SFTP the rebuilt bundle on each success.
