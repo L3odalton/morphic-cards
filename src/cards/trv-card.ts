@@ -10,9 +10,12 @@ import { MorphicCard, type MorphicBaseConfig } from "../shared/base-card";
 import { iconMorphStyles, shapeForActive } from "../shared/shapes";
 import type { MorphicGridOptions } from "../shared/grid";
 import { type HassEntity, type HomeAssistant, isUnavailable } from "../shared/ha";
+import { type ActionConfig, bindActionHandler, fireAction } from "../shared/actions";
+import { localize } from "../shared/localize";
 
 export interface TrvCardConfig extends MorphicBaseConfig {
   entity: string;
+  icon?: string;
   step?: number;
   show_hvac_modes?: boolean;
   show_presets?: boolean;
@@ -22,6 +25,10 @@ export interface TrvCardConfig extends MorphicBaseConfig {
   valve_position_entity?: string;
   battery_entity?: string;
   window_entity?: string;
+  temperature_entity?: string;
+  tap_action?: ActionConfig;
+  hold_action?: ActionConfig;
+  double_tap_action?: ActionConfig;
 }
 
 const HVAC_ICONS: Record<string, string> = {
@@ -63,12 +70,14 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
   }
 
   public override getGridOptions(): MorphicGridOptions {
-    return { columns: 6, rows: 4, min_columns: 4, min_rows: 3 };
+    return { columns: 12, rows: "auto", min_columns: 4, min_rows: 3 };
   }
 
   public override getCardSize(): number {
     return 4;
   }
+
+  private _cleanupActions?: () => void;
 
   // ---- Entity helpers ------------------------------------------------------
 
@@ -85,12 +94,32 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
     return this.hass?.config?.unit_system?.temperature ?? "°";
   }
 
+  private get currentTemperature(): unknown {
+    const extId = this._config?.temperature_entity;
+    if (extId && this.hass) {
+      const ext = this.hass.states[extId];
+      if (ext) return Number(ext.state);
+    }
+    return this.stateObj?.attributes.current_temperature;
+  }
+
+  private get resolvedIcon(): string {
+    if (this._config?.icon) return this._config.icon;
+    const entityIcon = this.stateObj?.attributes.icon as string | undefined;
+    if (entityIcon) return entityIcon;
+    return this.heating ? "mdi:fire" : "mdi:radiator-disabled";
+  }
+
   private get heating(): boolean {
     const s = this.stateObj;
     if (!s) return false;
     const action = s.attributes.hvac_action as string | undefined;
     if (action) return action === "heating";
     return s.state !== "off" && !isUnavailable(s);
+  }
+
+  private t(key: string): string {
+    return localize(this.hass?.language, key);
   }
 
   private fmt(n: unknown): string {
@@ -141,6 +170,66 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
     }
   }
 
+  // ---- Icon actions --------------------------------------------------------
+
+  private _handleIconTap(): void {
+    const action = this._config?.tap_action;
+    if (!action || action.action === "toggle") {
+      this._toggleHeat();
+      return;
+    }
+    if (action.action === "none") return;
+    this._dispatchAction("tap");
+  }
+
+  private _handleIconHold(): void {
+    const action = this._config?.hold_action ?? { action: "more-info" as const };
+    if (action.action === "none") return;
+    this._dispatchAction("hold");
+  }
+
+  private _handleIconDoubleTap(): void {
+    const action = this._config?.double_tap_action ?? { action: "none" as const };
+    if (action.action === "none") return;
+    this._dispatchAction("double_tap");
+  }
+
+  private _dispatchAction(action: "tap" | "hold" | "double_tap"): void {
+    fireAction(
+      this,
+      {
+        entity: this._config?.entity,
+        tap_action: this._config?.tap_action ?? { action: "toggle" },
+        hold_action: this._config?.hold_action ?? { action: "more-info" },
+        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
+      },
+      action,
+    );
+  }
+
+  protected override firstUpdated(): void {
+    super.firstUpdated();
+    this._bindIconActions();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._cleanupActions?.();
+    this._cleanupActions = undefined;
+  }
+
+  private _bindIconActions(): void {
+    this._cleanupActions?.();
+    const btn = this.shadowRoot?.querySelector<HTMLElement>(".morph");
+    if (!btn) return;
+    this._cleanupActions = bindActionHandler(
+      btn,
+      () => this._handleIconTap(),
+      () => this._handleIconHold(),
+      () => this._handleIconDoubleTap(),
+    );
+  }
+
   // ---- Render --------------------------------------------------------------
 
   protected renderContent(): TemplateResult {
@@ -154,12 +243,12 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
         </div>
         <div class="unavailable">
           <ha-icon icon="mdi:thermometer-off"></ha-icon>
-          <span>Entity unavailable</span>
+          <span>${this.t("unavailable")}</span>
         </div>
       `;
     }
 
-    const current = s.attributes.current_temperature;
+    const current = this.currentTemperature;
     const target = s.attributes.temperature;
     const shape = shapeForActive(this.heating);
 
@@ -169,15 +258,14 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
           class="morph ${shape === "squircle" ? "is-active" : ""}"
           part="icon"
           aria-label="Toggle heating"
-          @click=${this._toggleHeat}
         >
-          <ha-icon icon=${this.heating ? "mdi:fire" : "mdi:radiator-disabled"}></ha-icon>
+          <ha-icon icon=${this.resolvedIcon}></ha-icon>
         </button>
         <div class="titles">
           <div class="title">${name}</div>
           <div class="subtitle">
-            ${current !== undefined ? html`Now ${this.fmt(current)}${this.unit}` : nothing}
-            ${this.heating ? html`<span class="dot">•</span> Heating` : nothing}
+            ${current !== undefined ? html`${this.t("now")} ${this.fmt(current)}${this.unit}` : nothing}
+            ${this.heating ? html`<span class="dot">•</span> ${this.t("heating")}` : nothing}
           </div>
         </div>
       </div>
@@ -249,17 +337,21 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
 
     if (c.show_valve_position) {
       const pos = this._extraState(c.valve_position_entity) ?? s.attributes.valve_position;
-      items.push(this._extraItem("mdi:pipe-valve", "Valve", pos !== undefined ? `${pos}%` : "—"));
+      items.push(this._extraItem("mdi:pipe-valve", this.t("valve"), pos !== undefined ? `${pos}%` : "—"));
     }
     if (c.show_battery) {
       const bat = this._extraState(c.battery_entity) ?? s.attributes.battery_level;
-      items.push(this._extraItem("mdi:battery", "Battery", bat !== undefined ? `${bat}%` : "—"));
+      items.push(this._extraItem("mdi:battery", this.t("battery"), bat !== undefined ? `${bat}%` : "—"));
     }
     if (c.show_window) {
       const win = this._extraState(c.window_entity);
       const open = win === "on" || win === "open" || win === true;
       items.push(
-        this._extraItem(open ? "mdi:window-open-variant" : "mdi:window-closed-variant", "Window", open ? "Open" : "Closed"),
+        this._extraItem(
+          open ? "mdi:window-open-variant" : "mdi:window-closed-variant",
+          this.t("window"),
+          open ? this.t("open") : this.t("closed"),
+        ),
       );
     }
 
@@ -424,28 +516,37 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
       .extras {
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
-        padding-top: 4px;
-        border-top: 1px solid var(--morphic-outline);
+        gap: 8px;
       }
       .extra {
         display: flex;
         align-items: center;
         gap: 8px;
+        padding: 8px 14px;
+        border-radius: 16px;
+        background: var(--md-sys-color-surface-container-high, var(--morphic-surface));
         color: var(--morphic-on-surface-variant);
-        --mdc-icon-size: 20px;
+        --mdc-icon-size: 18px;
+        flex: 1 1 0;
+        min-inline-size: 0;
       }
       .extra-text {
         display: flex;
         flex-direction: column;
-        line-height: 1.1;
+        line-height: 1.15;
+        min-inline-size: 0;
       }
       .extra-value {
         font-weight: 600;
+        font-size: 0.9rem;
         color: var(--morphic-on-surface);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .extra-label {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
+        color: var(--morphic-on-surface-variant);
       }
 
       .unavailable {

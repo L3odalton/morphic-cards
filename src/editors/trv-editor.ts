@@ -15,7 +15,7 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
       { name: "name", selector: { text: {} } },
       {
         type: "expandable",
-        name: "controls",
+        name: "",
         title: "Controls",
         icon: "mdi:thermometer",
         expanded: true,
@@ -38,7 +38,19 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
       },
       {
         type: "expandable",
-        name: "extras",
+        name: "",
+        title: "Sensors",
+        icon: "mdi:thermometer-lines",
+        schema: [
+          {
+            name: "temperature_entity",
+            selector: { entity: { domain: "sensor", device_class: "temperature" } },
+          },
+        ],
+      },
+      {
+        type: "expandable",
+        name: "",
         title: "Extra readouts",
         icon: "mdi:gauge",
         schema: [
@@ -64,10 +76,22 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
       },
       {
         type: "expandable",
-        name: "appearance",
+        name: "",
+        title: "Icon actions",
+        icon: "mdi:gesture-tap",
+        schema: [
+          { name: "tap_action", selector: { ui_action: {} } },
+          { name: "hold_action", selector: { ui_action: {} } },
+          { name: "double_tap_action", selector: { ui_action: {} } },
+        ],
+      },
+      {
+        type: "expandable",
+        name: "",
         title: "Appearance & accent",
         icon: "mdi:palette",
         schema: [
+          { name: "icon", selector: { icon: {} } },
           { name: "color", selector: { text: {} } },
           { name: "color_key", selector: { text: {} } },
           {
@@ -95,18 +119,20 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
     return {
       entity: "Thermostat / TRV entity",
       name: "Name (overrides friendly name)",
-      controls: "Controls",
+      icon: "Icon (defaults to entity icon)",
       show_hvac_modes: "Show HVAC modes",
       show_presets: "Show presets",
       step: "Temperature step",
-      extras: "Extra readouts",
+      temperature_entity: "External temperature sensor",
       show_valve_position: "Valve position",
       show_battery: "Battery",
       show_window: "Window / heating",
       valve_position_entity: "Valve position entity",
       battery_entity: "Battery entity",
       window_entity: "Window / contact entity",
-      appearance: "Appearance & accent",
+      tap_action: "Tap action",
+      hold_action: "Hold action",
+      double_tap_action: "Double-tap action",
       color: "Accent override",
       color_key: "Color key",
       harmonize: "Harmonize to theme",
@@ -118,6 +144,8 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
 
   protected override helpers(): Record<string, string> {
     return {
+      temperature_entity:
+        "Read the 'Now' temperature from an external sensor instead of the thermostat's built-in reading.",
       color:
         "Force an accent: hex (#3b82f6), rgb(), a palette index (3) or name (accent-3). Leave empty to derive from the color key.",
       color_key:
@@ -129,7 +157,11 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
   }
 
   protected override withDefaults(config: TrvCardConfig): TrvCardConfig {
-    return { ...config };
+    return {
+      show_hvac_modes: true,
+      show_presets: true,
+      ...config,
+    };
   }
 }
 
