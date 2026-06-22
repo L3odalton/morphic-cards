@@ -57,6 +57,7 @@ export abstract class MorphicCard<
     css`
       :host {
         display: block;
+        block-size: 100%;
       }
       .morphic-root {
         container-type: inline-size;
@@ -161,10 +162,14 @@ export abstract class MorphicCard<
     this._resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const w = entry.contentRect.width;
-        // Reflect a coarse size bucket for JS-driven layout decisions.
-        const bucket = w < 220 ? "compact" : w < 360 ? "regular" : "wide";
-        if (this.getAttribute("data-size") !== bucket) {
-          this.setAttribute("data-size", bucket);
+        const h = entry.contentRect.height;
+        const wBucket = w < 220 ? "compact" : w < 360 ? "regular" : "wide";
+        const hBucket = h < 80 ? "compact" : h < 140 ? "medium" : h < 220 ? "tall" : "x-tall";
+        if (this.getAttribute("data-size") !== wBucket) {
+          this.setAttribute("data-size", wBucket);
+        }
+        if (this.getAttribute("data-height") !== hBucket) {
+          this.setAttribute("data-height", hBucket);
         }
       }
     });
