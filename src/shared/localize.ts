@@ -11,6 +11,8 @@ const strings: Record<string, Record<string, string>> = {
     window: "Window",
     open: "Open",
     closed: "Closed",
+    home: "Home",
+    away: "Away",
   },
   de: {
     now: "Aktuell",
@@ -21,6 +23,8 @@ const strings: Record<string, Record<string, string>> = {
     window: "Fenster",
     open: "Offen",
     closed: "Geschlossen",
+    home: "Zuhause",
+    away: "Abwesend",
   },
 };
 

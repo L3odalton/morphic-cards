@@ -40,11 +40,31 @@ export abstract class MorphicEditorBase<
   @state() protected _config?: TConfig;
 
   public setConfig(config: TConfig): void {
-    this._config = { ...config };
+    const flat = { ...config } as Record<string, unknown>;
+    const cardMod = flat.card_mod as { style?: string } | undefined;
+    if (cardMod?.style) {
+      flat.card_mod_style = cardMod.style;
+    }
+    this._config = flat as TConfig;
   }
 
   /** Subclasses provide the ha-form schema (may use expandable groups). */
   protected abstract schema(): HaFormSchema[];
+
+  private _fullSchema(): HaFormSchema[] {
+    return [
+      ...this.schema(),
+      {
+        type: "expandable",
+        name: "",
+        title: "Card-Mod (custom CSS)",
+        icon: "mdi:language-css3",
+        schema: [
+          { name: "card_mod_style", selector: { text: { multiline: true } } },
+        ],
+      },
+    ];
+  }
 
   /** Optional human labels per field name. */
   protected labels(): Record<string, string> {
@@ -61,19 +81,38 @@ export abstract class MorphicEditorBase<
     return config;
   }
 
+  private static readonly _baseLabels: Record<string, string> = {
+    card_mod_style: "Custom CSS",
+  };
+
+  private static readonly _baseHelpers: Record<string, string> = {
+    card_mod_style:
+      "Card-Mod CSS applied to this card. Use --morphic-* tokens for theming.",
+  };
+
   private _computeLabel = (schema: { name: string; title?: string }): string => {
     const map = this.labels();
-    return map[schema.name] ?? schema.title ?? prettify(schema.name);
+    return map[schema.name] ?? MorphicEditorBase._baseLabels[schema.name] ?? schema.title ?? prettify(schema.name);
   };
 
   private _computeHelper = (schema: { name: string }): string | undefined => {
-    return this.helpers()[schema.name];
+    return this.helpers()[schema.name] ?? MorphicEditorBase._baseHelpers[schema.name];
   };
 
   private _valueChanged(ev: CustomEvent): void {
     ev.stopPropagation();
     if (!this._config) return;
-    const next = this.withDefaults({ ...this._config, ...ev.detail.value });
+    const merged = { ...this._config, ...ev.detail.value } as Record<string, unknown>;
+
+    const styleStr = (merged.card_mod_style as string) ?? "";
+    delete merged.card_mod_style;
+    if (styleStr.trim()) {
+      merged.card_mod = { style: styleStr };
+    } else {
+      delete merged.card_mod;
+    }
+
+    const next = this.withDefaults(merged as TConfig);
     fireEvent(this, "config-changed", { config: next });
   }
 
@@ -84,7 +123,7 @@ export abstract class MorphicEditorBase<
         <ha-form
           .hass=${this.hass}
           .data=${this._config}
-          .schema=${this.schema()}
+          .schema=${this._fullSchema()}
           .computeLabel=${this._computeLabel}
           .computeHelper=${this._computeHelper}
           @value-changed=${this._valueChanged}

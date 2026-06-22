@@ -74,7 +74,7 @@ export const morphicBaseTokens = css`
     );
 
     /* --- Shape + spacing --- */
-    --morphic-radius: var(--ha-card-border-radius, 20px);
+    --morphic-radius: 16px;
     --morphic-gap: 12px;
     --morphic-icon-size: 22px;
 
