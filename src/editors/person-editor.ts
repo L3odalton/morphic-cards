@@ -11,6 +11,7 @@ export class MorphicPersonCardEditor extends MorphicEditorBase<PersonCardConfig>
     return [
       { name: "entity", required: true, selector: { entity: { domain: "person" } } },
       { name: "name", selector: { text: {} } },
+      { name: "show_zone", selector: { boolean: {} } },
       {
         type: "expandable",
         name: "",
@@ -84,6 +85,7 @@ export class MorphicPersonCardEditor extends MorphicEditorBase<PersonCardConfig>
     return {
       entity: "Person entity",
       name: "Name (overrides friendly name)",
+      show_zone: "Show zone label",
       bubble_1_entity: "Bubble entity (leave empty for person zone)",
       bubble_1_position: "Bubble position",
       bubble_1_icon: "Bubble icon (auto from state if empty)",

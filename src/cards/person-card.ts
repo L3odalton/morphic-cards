@@ -25,6 +25,7 @@ export interface BubbleConfig {
 export interface PersonCardConfig extends MorphicBaseConfig {
   entity: string;
   icon?: string;
+  show_zone?: boolean;
   bubbles?: BubbleConfig[];
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
@@ -242,7 +243,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
         </div>
         <div class="titles">
           <div class="title">${name}</div>
-          <div class="subtitle">${zoneName}</div>
+          ${this._config?.show_zone ? html`<div class="subtitle">${zoneName}</div>` : nothing}
         </div>
       </div>
     `;
