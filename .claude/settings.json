@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint:fix)",
+      "Bash(npm run build)",
+      "Bash(npm run deploy:dry)",
+      "Bash(npm run format)",
+      "Bash(npm run clean)"
+    ]
+  }
+}

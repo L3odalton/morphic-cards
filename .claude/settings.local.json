@@ -1,0 +1,5 @@
+{
+  "env": {
+    "PATH": "C:\\Users\\admin\\AppData\\Roaming\\fnm\\node-versions\\v24.17.0\\installation;${PATH}"
+  }
+}

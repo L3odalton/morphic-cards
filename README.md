@@ -124,8 +124,8 @@ scripts/      SSH/SFTP deploy + watch (Feature 6)
 docs/         token contract, accent engine, Card-Mod examples
 ```
 
-Project conventions are encoded as Cursor rules in `.cursor/rules/` so future work stays
-consistent.
+Project conventions are documented in [`CLAUDE.md`](CLAUDE.md) for Claude Code and in
+[`.claude/settings.json`](.claude/settings.json) for permissions.
 
 ## External dependencies (reused, not reimplemented)
 
