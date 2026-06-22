@@ -13,13 +13,15 @@ import { type HassEntity, type HomeAssistant, isUnavailable } from "../shared/ha
 import { type ActionConfig, bindActionHandler, fireAction } from "../shared/actions";
 import { localize } from "../shared/localize";
 
+export interface BubbleStateConfig {
+  state: string;
+  color?: string;
+}
+
 export interface BubbleConfig {
   position: 0 | 45 | 90 | 135 | 180 | 225 | 270 | 315;
   entity?: string;
-  icon?: string;
-  color?: string;
-  state_icons?: Record<string, string>;
-  state_colors?: Record<string, string>;
+  conditions: BubbleStateConfig[];
 }
 
 export interface PersonCardConfig extends MorphicBaseConfig {
@@ -32,18 +34,13 @@ export interface PersonCardConfig extends MorphicBaseConfig {
   double_tap_action?: ActionConfig;
 }
 
-const ZONE_ICONS: Record<string, string> = {
-  home: "mdi:home",
-  not_home: "mdi:home-export-outline",
-  away: "mdi:home-export-outline",
-  work: "mdi:briefcase",
-  school: "mdi:school",
-  unknown: "mdi:help-circle-outline",
-};
-
 const ZONE_COLORS: Record<string, string> = {
   home: "var(--morphic-accent)",
   not_home: "var(--morphic-on-surface-variant)",
+  away: "var(--morphic-on-surface-variant)",
+  work: "var(--morphic-accent)",
+  school: "var(--morphic-accent)",
+  unknown: "var(--morphic-on-surface-variant)",
 };
 
 @customElement("morphic-person-card")
@@ -183,20 +180,14 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
 
   // ---- Bubble helpers ------------------------------------------------------
 
-  private _resolveBubble(b: BubbleConfig): { icon: string; color: string } | null {
+  private _resolveBubble(b: BubbleConfig): { color: string } | null {
     const state = b.entity && this.hass ? this.hass.states[b.entity]?.state : this.zone;
+    if (!state || !b.conditions?.length) return null;
 
-    const icon =
-      b.icon ??
-      (state && b.state_icons?.[state]) ??
-      (state ? ZONE_ICONS[state] ?? "mdi:map-marker" : "mdi:map-marker");
+    const match = b.conditions.find((c) => c.state === state);
+    if (!match) return null;
 
-    const color =
-      b.color ??
-      (state && b.state_colors?.[state]) ??
-      (state ? ZONE_COLORS[state] ?? "var(--morphic-on-surface-variant)" : "var(--morphic-on-surface-variant)");
-
-    return { icon, color };
+    return { color: match.color ?? ZONE_COLORS[state] ?? "var(--morphic-accent)" };
   }
 
   // ---- Render --------------------------------------------------------------
@@ -224,7 +215,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
     const shape = shapeForActive(this.isHome);
     const picture = this.entityPicture;
     const icon = this.resolvedIcon;
-    const bubbles = this._config?.bubbles ?? [{ position: 45 as const }];
+    const bubbles = this._config?.bubbles ?? [];
     const zoneName = this._resolveZoneName(s);
 
     return html`
@@ -257,9 +248,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
       <div
         class="bubble"
         style=${`--_angle: ${pos}deg; --_bubble-color: ${resolved.color}`}
-      >
-        <ha-icon icon=${resolved.icon}></ha-icon>
-      </div>
+      ></div>
     `;
   }
 
@@ -278,8 +267,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
     css`
       :host {
         --_icon: 40px;
-        --_bubble: 20px;
-        --_bubble-icon: 12px;
+        --_bubble: 12px;
       }
 
       .morphic-root {
@@ -319,22 +307,27 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
 
       .bubble {
         --_size: var(--_bubble);
-        --_radius: calc(var(--_icon) / 2);
+        --_radius: calc(var(--_icon) / 2 + var(--_size) / 4);
         position: absolute;
         inline-size: var(--_size);
         block-size: var(--_size);
         border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: var(--morphic-surface);
-        color: var(--_bubble-color, var(--morphic-on-surface-variant));
-        border: 2px solid var(--morphic-surface);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        background: var(--_bubble-color, var(--morphic-accent));
+        box-shadow: 0 0 0 2px var(--morphic-surface), 0 1px 3px rgba(0, 0, 0, 0.12);
         pointer-events: none;
         z-index: 1;
-        --mdc-icon-size: var(--_bubble-icon);
+        animation: bubble-breathe 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
         top: calc(50% - var(--_size) / 2 - var(--_radius) * cos(var(--_angle)));
         left: calc(50% - var(--_size) / 2 + var(--_radius) * sin(var(--_angle)));
+      }
+
+      @keyframes bubble-breathe {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.7; transform: scale(0.92); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .bubble { animation: none; }
       }
 
       .titles {
@@ -382,8 +375,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
       }
       :host(:has(.morphic-root[data-height="medium"])) {
         --_icon: 48px;
-        --_bubble: 22px;
-        --_bubble-icon: 13px;
+        --_bubble: 14px;
       }
 
       .morphic-root[data-height="tall"] {
@@ -391,8 +383,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
       }
       :host(:has(.morphic-root[data-height="tall"])) {
         --_icon: 64px;
-        --_bubble: 26px;
-        --_bubble-icon: 15px;
+        --_bubble: 16px;
       }
       .morphic-root[data-height="tall"] .title {
         font-size: 1.1rem;
@@ -403,8 +394,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
       }
       :host(:has(.morphic-root[data-height="x-tall"])) {
         --_icon: 80px;
-        --_bubble: 30px;
-        --_bubble-icon: 17px;
+        --_bubble: 18px;
       }
       .morphic-root[data-height="x-tall"] .title {
         font-size: 1.2rem;
