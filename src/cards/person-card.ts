@@ -347,42 +347,6 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
         .subtitle { font-size: 0.82rem; }
       }
 
-      /* ---- Height breakpoints (base card sets data-height on :host) ---- */
-      :host([data-height="medium"]) {
-        --_icon: 48px;
-        --_bubble: 14px;
-      }
-      :host([data-height="medium"]) .morphic-root {
-        padding: 12px 16px;
-      }
-      :host([data-height="medium"]) .person-row {
-        gap: 14px;
-      }
-
-      :host([data-height="tall"]) {
-        --_icon: 64px;
-        --_bubble: 16px;
-      }
-      :host([data-height="tall"]) .morphic-root {
-        padding: 16px;
-      }
-      :host([data-height="tall"]) .title {
-        font-size: 1.1rem;
-      }
-
-      :host([data-height="x-tall"]) {
-        --_icon: 80px;
-        --_bubble: 18px;
-      }
-      :host([data-height="x-tall"]) .morphic-root {
-        padding: 20px;
-      }
-      :host([data-height="x-tall"]) .title {
-        font-size: 1.2rem;
-      }
-      :host([data-height="x-tall"]) .subtitle {
-        font-size: 0.9rem;
-      }
     `,
   ];
 }
