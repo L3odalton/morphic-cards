@@ -1,0 +1,45 @@
+---
+description: Rules for authoring Morphic cards and editors — base class, getGridOptions, GUI editor, and the accent/gradient/icon-morph feature set.
+globs: src/cards/**,src/editors/**
+alwaysApply: false
+---
+
+# Authoring Morphic Cards & Editors
+
+## Every card MUST
+- Extend the shared **`MorphicCard`** base (`src/shared/base-card.ts`) — do not subclass
+  `LitElement` directly. The base provides the accent engine, gradient + icon-morph tokens,
+  and the responsive/sections plumbing.
+- Implement **`getGridOptions()`** returning a sensible default plus `min_columns` /
+  `min_rows`. Lay out with **container queries** against the card root
+  (`container-type: inline-size`) — never fixed `px` widths.
+- Provide `static getConfigElement()`, `static getStubConfig()`, and register itself in
+  `window.customCards` (handled via the `registerMorphicCard()` helper).
+- Style **only** from tokens (`--morphic-*`, `--md-sys-color-*`) with native HA-var
+  fallbacks. Never hardcode hex colors.
+
+## Use the inherited features
+- **Accent**: call `this.accent` / set `this.colorKey`; default `color_key` is the card
+  title/name. Honor precedence: `color:` > `color_key:` > title > `entity_id`.
+- **Gradient**: apply `var(--morphic-accent-fill)` for the subtle accent → primary fill;
+  keep text on `--md-sys-color-on-surface` legible.
+- **Icon-morph**: use the base `iconShape` state (`circle` for OFF/inactive, `squircle`
+  for ON/active) — this is the signature interaction; animate the morph.
+
+## Every editor MUST
+- Extend the shared **editor base** (`src/editors/base-editor.ts`) and render with
+  **`ha-form`** + selectors (`ha-entity-picker`, `ha-selector`, ...). **No raw YAML blob.**
+- Be mobile-first, M3-token styled, with grouped/collapsible sections, clear labels,
+  helper text, sane defaults, and a working live preview.
+- Fire `config-changed` via the base `dispatchConfig()` helper; never mutate config in place.
+
+## Example: grid options
+```typescript
+getGridOptions(): MorphicGridOptions {
+  return { columns: 6, rows: 3, min_columns: 4, min_rows: 2 };
+}
+```
+
+## Don'ts
+- No fixed pixel layout, no theme/`--md-sys-color-*` overrides, no targeting another
+  card's shadow DOM, no reimplementing Bubble Card / navbar-card.

@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output (the bundle itself is generated; keep the folder)
+dist/*
+!dist/.gitkeep
+
+# Deploy secrets — NEVER commit
+.env.deploy
+.env
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+*.tsbuildinfo
+
+# Misc
+coverage/
+.tmp/

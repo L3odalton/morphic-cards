@@ -1,0 +1,53 @@
+---
+description: Morphic project constitution — architecture, token-only styling, sections-first, Card-Mod contract, and deploy workflow. Applies to all work in this repo.
+alwaysApply: true
+---
+
+# Morphic — Project Constitution
+
+Morphic is a Home Assistant **first-party custom-card collection** implementing
+**Material 3 Expressive**, designed to be edited/extended with **Card-Mod**. The name
+reflects M3 Expressive's signature shape-morphing.
+
+## Architecture (cards-only, on top of an existing theme)
+- We do **NOT** build a theme. Morphic rides on **Nerwyn/material-you-theme** + its
+  companion **material-you-utilities** as the base color/token engine.
+- Never hardcode `--md-sys-color-*`. The base palette is **user-defined** by the theme;
+  read it at runtime.
+- Every card styles itself from M3 tokens and **falls back gracefully** to native HA CSS
+  vars (`--primary-color`, `--card-background-color`, ...) when off-theme.
+
+## Token-only styling + Card-Mod contract
+- Style **only** from tokens: public `--morphic-*` tokens and `--md-sys-color-*`.
+- Card-Mod users override **public `--morphic-*` tokens only** — never internal selectors,
+  shadow-DOM classes, or element structure. Treat the token surface as the public API
+  (see `docs/token-contract.md`). Do not rename/remove public tokens without a doc update.
+
+## Hard requirements
+- **Sections-first** layout: every card implements `getGridOptions()` and is fully
+  responsive via container queries / ResizeObserver — **no fixed pixel widths**.
+- **Mobile-first**: one-handed reach, min 48dp touch targets, bottom nav, pop-ups over
+  page jumps.
+- Reuse **Bubble Card** (pop-ups) and **navbar-card** (bottom nav). Do not reimplement them.
+- Design/document against the **Expressive** scheme; per-card accents come from the
+  accent engine, never fixed hex.
+
+## Core features (baked into shared base — inherit, don't re-add per card)
+1. Theme-derived per-card **accent engine** (HCT seeds + `Blend.harmonize()`, deterministic
+   hash selection, `color:` > `color_key:` > title > entity_id precedence).
+2. Subtle **accent → primary gradient** fill (token-controlled intensity/angle).
+3. Android-style **circle ↔ squircle icon-morph** for OFF/ON.
+4. **Sections-first** responsive layout via `getGridOptions()`.
+5. Polished **ha-form GUI editor** with live preview (never a raw YAML blob).
+6. **SSH/SFTP** dev/deploy tooling.
+
+## Deploy workflow
+- Secrets live in a **gitignored `.env.deploy`** (template: `.env.deploy.example`):
+  SSH host/port/user, key-or-password auth, remote path (e.g. `/config/www/morphic`).
+- `npm run build` → Rollup prod build to `/dist`.
+- `npm run deploy` → build, then SFTP `/dist` to remote.
+- `npm run dev` → Rollup watch; auto-SFTP the rebuilt bundle on each success.
+- Cross-platform (Windows/PowerShell friendly). **Never use rsync. Never commit secrets.**
+
+## Not now
+- **No HACS** yet. Do not add `hacs.json`/`info.md` or HACS validation to CI.
