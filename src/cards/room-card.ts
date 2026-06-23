@@ -8,8 +8,8 @@ import { customElement } from "lit/decorators.js";
 import { MorphicCard, type MorphicBaseConfig } from "../shared/base-card";
 import { iconMorphStyles, shapeForActive } from "../shared/shapes";
 import type { MorphicGridOptions } from "../shared/grid";
-import { type HassEntity, type HomeAssistant, fireEvent, isUnavailable } from "../shared/ha";
-import type { ActionConfig } from "../shared/actions";
+import { type HassEntity, type HomeAssistant, isUnavailable } from "../shared/ha";
+import { type ActionConfig, bindActionHandler, fireAction } from "../shared/actions";
 
 export interface RoomChipConfig {
   entity: string;
@@ -85,49 +85,60 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
     return !isUnavailable(s) && s.state !== "off" && s.state !== "closed" && s.state !== "idle" && s.state !== "not_home";
   }
 
+  private _cleanupActions?: () => void;
+
   // ---- Actions --------------------------------------------------------------
+
+  protected override firstUpdated(): void {
+    super.firstUpdated();
+    this._bindActions();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._cleanupActions?.();
+    this._cleanupActions = undefined;
+  }
+
+  private _bindActions(): void {
+    this._cleanupActions?.();
+    const el = this.shadowRoot?.querySelector<HTMLElement>(".room");
+    if (!el) return;
+    this._cleanupActions = bindActionHandler(
+      el,
+      () => this._handleCardTap(),
+      () => this._handleCardHold(),
+    );
+  }
 
   private _handleCardTap(): void {
     const action = this._config?.tap_action ?? { action: "navigate" as const };
     if (action.action === "none") return;
-    fireEvent(this, "hass-action", {
-      config: {
-        entity: this._config?.entity,
-        tap_action: this._config?.tap_action ?? { action: "navigate", navigation_path: "/" },
-        hold_action: this._config?.hold_action ?? { action: "none" },
-        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
-      },
-      action: "tap",
-    });
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "navigate", navigation_path: "/" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "tap");
   }
 
   private _handleCardHold(): void {
-    const action = this._config?.hold_action ?? { action: "none" as const };
+    const action = this._config?.hold_action ?? { action: "more-info" as const };
     if (action.action === "none") return;
-    fireEvent(this, "hass-action", {
-      config: {
-        entity: this._config?.entity,
-        tap_action: this._config?.tap_action ?? { action: "navigate", navigation_path: "/" },
-        hold_action: this._config?.hold_action ?? { action: "none" },
-        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
-      },
-      action: "hold",
-    });
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "navigate", navigation_path: "/" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "hold");
   }
 
-  private _handleChipAction(c: RoomChipConfig, action: "tap" | "hold" | "double_tap", ev: Event): void {
+  private _handleChipTap(c: RoomChipConfig, ev: Event): void {
     ev.stopPropagation();
-    const actionConfig = action === "tap" ? c.tap_action : action === "hold" ? c.hold_action : c.double_tap_action;
-    if (!actionConfig || actionConfig.action === "none") return;
-    fireEvent(this, "hass-action", {
-      config: {
-        entity: c.entity,
-        tap_action: c.tap_action ?? { action: "more-info" },
-        hold_action: c.hold_action ?? { action: "none" },
-        double_tap_action: c.double_tap_action ?? { action: "none" },
-      },
-      action,
-    });
+    const action = c.tap_action ?? { action: "more-info" as const };
+    if (action.action === "none") return;
+    fireAction(this, {
+      entity: c.entity,
+      tap_action: c.tap_action ?? { action: "more-info" },
+    }, "tap");
   }
 
   // ---- Render ---------------------------------------------------------------
@@ -154,7 +165,7 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
     }
 
     return html`
-      <div class="room" @click=${this._handleCardTap} @contextmenu=${(e: Event) => { e.preventDefault(); this._handleCardHold(); }}>
+      <div class="room">
         <div class="header">
           <div class="morph ${shape === "squircle" ? "is-active" : ""}" part="icon">
             <ha-icon icon=${icon}></ha-icon>
@@ -190,9 +201,7 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
       <button
         class="chip ${active ? "is-active" : ""}"
         ?disabled=${!hasAction}
-        @click=${(ev: Event) => this._handleChipAction(c, "tap", ev)}
-        @contextmenu=${(ev: Event) => { ev.preventDefault(); this._handleChipAction(c, "hold", ev); }}
-        @dblclick=${(ev: Event) => this._handleChipAction(c, "double_tap", ev)}
+        @click=${(ev: Event) => this._handleChipTap(c, ev)}
       >
         ${c.icon
           ? html`<ha-icon icon=${c.icon}></ha-icon>`

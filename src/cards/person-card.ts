@@ -105,40 +105,29 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
 
   // ---- Icon actions --------------------------------------------------------
 
-  private _handleIconTap(): void {
+  private _handleTap(): void {
     const action = this._config?.tap_action ?? { action: "more-info" as const };
     if (action.action === "none") return;
-    this._dispatchAction("tap");
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "more-info" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "tap");
   }
 
-  private _handleIconHold(): void {
+  private _handleHold(): void {
     const action = this._config?.hold_action ?? { action: "more-info" as const };
     if (action.action === "none") return;
-    this._dispatchAction("hold");
-  }
-
-  private _handleIconDoubleTap(): void {
-    const action = this._config?.double_tap_action ?? { action: "none" as const };
-    if (action.action === "none") return;
-    this._dispatchAction("double_tap");
-  }
-
-  private _dispatchAction(action: "tap" | "hold" | "double_tap"): void {
-    fireAction(
-      this,
-      {
-        entity: this._config?.entity,
-        tap_action: this._config?.tap_action ?? { action: "more-info" },
-        hold_action: this._config?.hold_action ?? { action: "more-info" },
-        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
-      },
-      action,
-    );
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "more-info" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "hold");
   }
 
   protected override firstUpdated(): void {
     super.firstUpdated();
-    this._bindIconActions();
+    this._bindActions();
   }
 
   override disconnectedCallback(): void {
@@ -147,15 +136,14 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
     this._cleanupActions = undefined;
   }
 
-  private _bindIconActions(): void {
+  private _bindActions(): void {
     this._cleanupActions?.();
-    const btn = this.shadowRoot?.querySelector<HTMLElement>(".morph");
-    if (!btn) return;
+    const el = this.shadowRoot?.querySelector<HTMLElement>(".person-row");
+    if (!el) return;
     this._cleanupActions = bindActionHandler(
-      btn,
-      () => this._handleIconTap(),
-      () => this._handleIconHold(),
-      () => this._handleIconDoubleTap(),
+      el,
+      () => this._handleTap(),
+      () => this._handleHold(),
     );
   }
 
@@ -202,15 +190,14 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
     return html`
       <div class="person-row">
         <div class="icon-wrap">
-          <button
+          <div
             class="morph ${shape === "squircle" ? "is-active" : ""}"
             part="icon"
-            aria-label=${name}
           >
             ${picture
               ? html`<img class="avatar" src=${picture} alt=${name} />`
               : html`<ha-icon icon=${icon}></ha-icon>`}
-          </button>
+          </div>
           ${bubbles.map((b) => this._renderBubble(b))}
         </div>
         <div class="titles">
@@ -264,6 +251,7 @@ export class MorphicPersonCard extends MorphicCard<PersonCardConfig> {
         gap: 12px;
         inline-size: 100%;
         min-inline-size: 0;
+        cursor: pointer;
       }
 
       .icon-wrap {
