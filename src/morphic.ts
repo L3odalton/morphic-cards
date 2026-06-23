@@ -5,6 +5,8 @@
 import { MorphicCard } from "./shared/base-card";
 import "./editors/trv-editor";
 import "./cards/trv-card";
+import "./editors/room-editor";
+import "./cards/room-card";
 import "./editors/separator-editor";
 import "./cards/separator-card";
 import "./editors/person-editor";
@@ -32,6 +34,14 @@ MorphicCard.registerCustomCard({
   type: "morphic-separator-card",
   name: "Morphic Separator",
   description: "A simple visual divider line for dashboards.",
+  documentationURL: "https://github.com/morphic/morphic-cards",
+});
+
+MorphicCard.registerCustomCard({
+  type: "morphic-room-card",
+  name: "Morphic Room Card",
+  description:
+    "Navigable room tile with status chips, climate readouts, and tap-to-navigate.",
   documentationURL: "https://github.com/morphic/morphic-cards",
 });
 
