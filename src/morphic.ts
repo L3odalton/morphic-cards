@@ -5,6 +5,8 @@
 import { MorphicCard } from "./shared/base-card";
 import "./editors/trv-editor";
 import "./cards/trv-card";
+import "./editors/separator-editor";
+import "./cards/separator-card";
 import "./editors/person-editor";
 import "./cards/person-card";
 
@@ -23,6 +25,13 @@ MorphicCard.registerCustomCard({
   name: "Morphic Person Card",
   description:
     "Material 3 Expressive person card with avatar, zone state, and configurable indicator bubbles.",
+  documentationURL: "https://github.com/morphic/morphic-cards",
+});
+
+MorphicCard.registerCustomCard({
+  type: "morphic-separator-card",
+  name: "Morphic Separator",
+  description: "A simple visual divider line for dashboards.",
   documentationURL: "https://github.com/morphic/morphic-cards",
 });
 
