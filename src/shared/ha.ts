@@ -28,8 +28,19 @@ export interface ThemeSettings {
   accentColor?: string;
 }
 
+export interface HassArea {
+  area_id: string;
+  name: string;
+  icon?: string | null;
+  picture?: string | null;
+  temperature_entity_id?: string | null;
+  humidity_entity_id?: string | null;
+  [key: string]: unknown;
+}
+
 export interface HomeAssistant {
   states: Record<string, HassEntity>;
+  areas?: Record<string, HassArea>;
   themes: {
     darkMode: boolean;
     theme: string;
