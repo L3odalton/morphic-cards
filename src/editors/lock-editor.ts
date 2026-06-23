@@ -22,7 +22,15 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
         name: "",
         schema: [
           { name: "show_state", selector: { boolean: {} } },
+          { name: "show_open", selector: { boolean: {} } },
+        ],
+      },
+      {
+        type: "grid",
+        name: "",
+        schema: [
           { name: "confirm", selector: { boolean: {} } },
+          { name: "confirm_open", selector: { boolean: {} } },
         ],
       },
       { name: "confirm_text", selector: { text: {} } },
@@ -77,7 +85,9 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
       name: "Name (overrides friendly name)",
       icon: "Icon (defaults to entity icon)",
       show_state: "Show state text",
-      confirm: "Require confirmation",
+      show_open: "Show open button",
+      confirm: "Confirm lock/unlock",
+      confirm_open: "Confirm open",
       confirm_text: "Confirmation text",
       tap_action: "Tap action",
       hold_action: "Hold action",
@@ -92,7 +102,9 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
 
   protected override helpers(): Record<string, string> {
     return {
+      show_open: "Show an open chip when the lock supports it. Auto-detected from the entity.",
       confirm: "Show a full-card confirmation overlay before executing the tap action.",
+      confirm_open: "Require confirmation before opening the lock (independent of main confirm).",
       confirm_text: 'Custom confirmation message. Defaults to "Are you sure?".',
       tap_action: "Default: toggle lock/unlock.",
     };
@@ -101,6 +113,7 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
   protected override withDefaults(config: LockCardConfig): LockCardConfig {
     return {
       show_state: true,
+      show_open: true,
       ...config,
     };
   }
@@ -212,6 +225,7 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
           <div class="chip-fields">
             <ha-entity-picker .hass=${this.hass} .value=${chip.entity ?? ""} @value-changed=${(ev: CustomEvent) => this._chipFieldChanged(index, "entity", ev)} allow-custom-entity></ha-entity-picker>
             <ha-icon-picker .hass=${this.hass} .value=${chip.icon ?? ""} .label=${"Icon (auto if empty)"} @value-changed=${(ev: CustomEvent) => this._chipFieldChanged(index, "icon", ev)}></ha-icon-picker>
+            <ha-selector .hass=${this.hass} .selector=${{ boolean: {} }} .value=${chip.confirm ?? false} .label=${"Require confirmation"} @value-changed=${(ev: CustomEvent) => this._chipFieldChanged(index, "confirm", ev)}></ha-selector>
             <ha-selector .hass=${this.hass} .selector=${{ ui_action: {} }} .value=${chip.tap_action} .label=${"Tap action"} @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "tap_action", ev)}></ha-selector>
             <ha-selector .hass=${this.hass} .selector=${{ ui_action: {} }} .value=${chip.hold_action} .label=${"Hold action"} @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "hold_action", ev)}></ha-selector>
           </div>

@@ -19,6 +19,8 @@ const strings: Record<string, Record<string, string>> = {
     unlocking: "Unlocking…",
     jammed: "Jammed",
     confirm_action: "Are you sure?",
+    confirm_open: "Open the lock?",
+    lock_open: "Open",
   },
   de: {
     now: "Aktuell",
@@ -37,6 +39,8 @@ const strings: Record<string, Record<string, string>> = {
     unlocking: "Entsperrt…",
     jammed: "Blockiert",
     confirm_action: "Bist du sicher?",
+    confirm_open: "Schloss öffnen?",
+    lock_open: "Öffnen",
   },
 };
 

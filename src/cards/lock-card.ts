@@ -14,6 +14,8 @@ import { localize } from "../shared/localize";
 export interface LockChipConfig {
   entity: string;
   icon?: string;
+  confirm?: boolean;
+  confirm_text?: string;
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
@@ -24,6 +26,8 @@ export interface LockCardConfig extends MorphicBaseConfig {
   icon?: string;
   name?: string;
   show_state?: boolean;
+  show_open?: boolean;
+  confirm_open?: boolean;
   confirm?: boolean;
   confirm_text?: string;
   chips?: LockChipConfig[];
@@ -36,6 +40,8 @@ export interface LockCardConfig extends MorphicBaseConfig {
 export class MorphicLockCard extends MorphicCard<LockCardConfig> {
   @state() private _confirming = false;
   private _confirmTimer?: ReturnType<typeof setTimeout>;
+  private _pendingAction?: () => void;
+  private _confirmText?: string;
 
   static getConfigElement(): HTMLElement {
     return document.createElement("morphic-lock-card-editor");
@@ -80,6 +86,15 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
     return this.stateObj?.state === "locked";
   }
 
+  private get supportsOpen(): boolean {
+    return (((this.stateObj?.attributes.supported_features as number) ?? 0) & 1) !== 0;
+  }
+
+  private get _showOpenChip(): boolean {
+    if (this._config?.show_open === false) return false;
+    return this.supportsOpen;
+  }
+
   private get resolvedIcon(): string {
     if (this._config?.icon) return this._config.icon;
     const entityIcon = this.stateObj?.attributes.icon as string | undefined;
@@ -98,33 +113,30 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
   // ---- Actions --------------------------------------------------------------
 
   private _handleTap(): void {
+    const execute = () => {
+      const action = this._config?.tap_action ?? { action: "toggle" as const };
+      if (action.action === "none") return;
+      if (action.action === "toggle" && this.stateObj) {
+        const service = this.isLocked ? "unlock" : "lock";
+        this.hass?.callService("lock", service, {}, { entity_id: this._config!.entity });
+        return;
+      }
+      fireEvent(this, "hass-action", {
+        config: {
+          entity: this._config?.entity,
+          tap_action: this._config?.tap_action ?? { action: "toggle" },
+          hold_action: this._config?.hold_action ?? { action: "more-info" },
+          double_tap_action: this._config?.double_tap_action ?? { action: "none" },
+        },
+        action: "tap",
+      });
+    };
+
     if (this._config?.confirm) {
-      this._showConfirm();
-      return;
+      this._showConfirm(execute, this._config.confirm_text);
+    } else {
+      execute();
     }
-    this._executeTap();
-  }
-
-  private _executeTap(): void {
-    this._clearConfirm();
-    const action = this._config?.tap_action ?? { action: "toggle" as const };
-    if (action.action === "none") return;
-
-    if (action.action === "toggle" && this.stateObj) {
-      const service = this.isLocked ? "unlock" : "lock";
-      this.hass?.callService("lock", service, {}, { entity_id: this._config!.entity });
-      return;
-    }
-
-    fireEvent(this, "hass-action", {
-      config: {
-        entity: this._config?.entity,
-        tap_action: this._config?.tap_action ?? { action: "toggle" },
-        hold_action: this._config?.hold_action ?? { action: "more-info" },
-        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
-      },
-      action: "tap",
-    });
   }
 
   private _handleHold(): void {
@@ -141,38 +153,65 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
     });
   }
 
+  private _handleOpen(ev: Event): void {
+    ev.stopPropagation();
+    const execute = () => {
+      this.hass?.callService("lock", "open", {}, { entity_id: this._config!.entity });
+    };
+    if (this._config?.confirm_open) {
+      this._showConfirm(execute, this.t("confirm_open"));
+    } else {
+      execute();
+    }
+  }
+
   private _handleChipAction(c: LockChipConfig, action: "tap" | "hold" | "double_tap", ev: Event): void {
     ev.stopPropagation();
     const actionConfig = action === "tap" ? c.tap_action : action === "hold" ? c.hold_action : c.double_tap_action;
     if (!actionConfig || actionConfig.action === "none") return;
-    fireEvent(this, "hass-action", {
-      config: {
-        entity: c.entity,
-        tap_action: c.tap_action ?? { action: "more-info" },
-        hold_action: c.hold_action ?? { action: "none" },
-        double_tap_action: c.double_tap_action ?? { action: "none" },
-      },
-      action,
-    });
+
+    const execute = () => {
+      fireEvent(this, "hass-action", {
+        config: {
+          entity: c.entity,
+          tap_action: c.tap_action ?? { action: "more-info" },
+          hold_action: c.hold_action ?? { action: "none" },
+          double_tap_action: c.double_tap_action ?? { action: "none" },
+        },
+        action,
+      });
+    };
+
+    if (c.confirm && action === "tap") {
+      this._showConfirm(execute, c.confirm_text);
+    } else {
+      execute();
+    }
   }
 
   // ---- Confirmation ---------------------------------------------------------
 
-  private _showConfirm(): void {
+  private _showConfirm(action: () => void, text?: string): void {
+    this._pendingAction = action;
+    this._confirmText = text;
     this._confirming = true;
     this._confirmTimer = setTimeout(() => {
-      this._confirming = false;
+      this._clearConfirm();
     }, 5000);
   }
 
   private _clearConfirm(): void {
     clearTimeout(this._confirmTimer);
     this._confirming = false;
+    this._pendingAction = undefined;
+    this._confirmText = undefined;
   }
 
   private _onConfirm(ev: Event): void {
     ev.stopPropagation();
-    this._executeTap();
+    const action = this._pendingAction;
+    this._clearConfirm();
+    action?.();
   }
 
   private _onCancel(ev: Event): void {
@@ -217,7 +256,14 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
           <div class="name">${name}</div>
           ${showState ? html`<div class="state">${this._stateText(s)}</div>` : nothing}
         </div>
-        ${chips.length ? html`<div class="chips">${chips.map((c) => this._renderChip(c))}</div>` : nothing}
+        <div class="chips">
+          ${this._showOpenChip ? html`
+            <button class="chip open-chip" @click=${this._handleOpen} title=${this.t("lock_open")}>
+              <ha-icon icon="mdi:door-open"></ha-icon>
+            </button>
+          ` : nothing}
+          ${chips.map((c) => this._renderChip(c))}
+        </div>
       </div>
       ${this._confirming ? this._renderConfirmOverlay() : nothing}
     `;
@@ -257,7 +303,7 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
   }
 
   private _renderConfirmOverlay(): TemplateResult {
-    const text = this._config?.confirm_text ?? this.t("confirm_action");
+    const text = this._confirmText ?? this._config?.confirm_text ?? this.t("confirm_action");
     return html`
       <div class="confirm-overlay" @click=${(e: Event) => e.stopPropagation()}>
         <span class="confirm-text">${text}</span>
@@ -345,6 +391,11 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
       .chip.is-active {
         background: var(--morphic-accent-container);
         color: var(--morphic-on-accent-container);
+      }
+      .chip.open-chip {
+        background: var(--morphic-accent);
+        color: var(--morphic-on-accent);
+        cursor: pointer;
       }
 
       /* ---- Confirmation overlay ---- */
