@@ -48,6 +48,7 @@ export class MorphicSeparatorCard extends MorphicCard<SeparatorCardConfig> {
         background: none;
         border: none;
         background-image: none;
+        box-shadow: none;
         block-size: auto;
       }
       .line {
