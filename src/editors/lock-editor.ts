@@ -42,7 +42,6 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
         schema: [
           { name: "tap_action", selector: { ui_action: {} } },
           { name: "hold_action", selector: { ui_action: {} } },
-          { name: "double_tap_action", selector: { ui_action: {} } },
         ],
       },
       {
@@ -91,7 +90,6 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
       confirm_text: "Confirmation text",
       tap_action: "Tap action",
       hold_action: "Hold action",
-      double_tap_action: "Double-tap action",
       color: "Accent override",
       color_key: "Color key",
       harmonize: "Harmonize to theme",
@@ -227,7 +225,6 @@ export class MorphicLockCardEditor extends MorphicEditorBase<LockCardConfig> {
             <ha-icon-picker .hass=${this.hass} .value=${chip.icon ?? ""} .label=${"Icon (auto if empty)"} @value-changed=${(ev: CustomEvent) => this._chipFieldChanged(index, "icon", ev)}></ha-icon-picker>
             <ha-selector .hass=${this.hass} .selector=${{ boolean: {} }} .value=${chip.confirm ?? false} .label=${"Require confirmation"} @value-changed=${(ev: CustomEvent) => this._chipFieldChanged(index, "confirm", ev)}></ha-selector>
             <ha-selector .hass=${this.hass} .selector=${{ ui_action: {} }} .value=${chip.tap_action} .label=${"Tap action"} @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "tap_action", ev)}></ha-selector>
-            <ha-selector .hass=${this.hass} .selector=${{ ui_action: {} }} .value=${chip.hold_action} .label=${"Hold action"} @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "hold_action", ev)}></ha-selector>
           </div>
         ` : nothing}
       </div>

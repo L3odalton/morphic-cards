@@ -8,7 +8,7 @@ import { MorphicCard, type MorphicBaseConfig } from "../shared/base-card";
 import { iconMorphStyles, shapeForActive } from "../shared/shapes";
 import type { MorphicGridOptions } from "../shared/grid";
 import { type HassEntity, type HomeAssistant, fireEvent, isUnavailable } from "../shared/ha";
-import type { ActionConfig } from "../shared/actions";
+import { type ActionConfig, bindActionHandler } from "../shared/actions";
 import { localize } from "../shared/localize";
 
 export interface LockChipConfig {
@@ -42,6 +42,7 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
   private _confirmTimer?: ReturnType<typeof setTimeout>;
   private _pendingAction?: () => void;
   private _confirmText?: string;
+  private _cleanupActions?: () => void;
 
   static getConfigElement(): HTMLElement {
     return document.createElement("morphic-lock-card-editor");
@@ -68,11 +69,6 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
 
   public override getCardSize(): number {
     return 1;
-  }
-
-  override disconnectedCallback(): void {
-    super.disconnectedCallback();
-    this._clearConfirm();
   }
 
   // ---- Helpers --------------------------------------------------------------
@@ -111,6 +107,29 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
   }
 
   // ---- Actions --------------------------------------------------------------
+
+  protected override firstUpdated(): void {
+    super.firstUpdated();
+    this._bindCardActions();
+  }
+
+  override disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this._cleanupActions?.();
+    this._cleanupActions = undefined;
+    this._clearConfirm();
+  }
+
+  private _bindCardActions(): void {
+    this._cleanupActions?.();
+    const row = this.shadowRoot?.querySelector<HTMLElement>(".lock-row");
+    if (!row) return;
+    this._cleanupActions = bindActionHandler(
+      row,
+      () => this._handleTap(),
+      () => this._handleHold(),
+    );
+  }
 
   private _handleTap(): void {
     const execute = () => {
@@ -165,24 +184,24 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
     }
   }
 
-  private _handleChipAction(c: LockChipConfig, action: "tap" | "hold" | "double_tap", ev: Event): void {
+  private _handleChipTap(c: LockChipConfig, ev: Event): void {
     ev.stopPropagation();
-    const actionConfig = action === "tap" ? c.tap_action : action === "hold" ? c.hold_action : c.double_tap_action;
-    if (!actionConfig || actionConfig.action === "none") return;
+    const actionConfig = c.tap_action ?? { action: "more-info" as const };
+    if (actionConfig.action === "none") return;
 
     const execute = () => {
       fireEvent(this, "hass-action", {
         config: {
           entity: c.entity,
           tap_action: c.tap_action ?? { action: "more-info" },
-          hold_action: c.hold_action ?? { action: "none" },
+          hold_action: c.hold_action ?? { action: "more-info" },
           double_tap_action: c.double_tap_action ?? { action: "none" },
         },
-        action,
+        action: "tap",
       });
     };
 
-    if (c.confirm && action === "tap") {
+    if (c.confirm) {
       this._showConfirm(execute, c.confirm_text);
     } else {
       execute();
@@ -244,11 +263,7 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
     }
 
     return html`
-      <div
-        class="lock-row"
-        @click=${this._handleTap}
-        @contextmenu=${(e: Event) => { e.preventDefault(); this._handleHold(); }}
-      >
+      <div class="lock-row">
         <div class="morph ${shape === "squircle" ? "is-active" : ""}" part="icon">
           <ha-icon icon=${icon}></ha-icon>
         </div>
@@ -291,9 +306,7 @@ export class MorphicLockCard extends MorphicCard<LockCardConfig> {
       <button
         class="chip ${active ? "is-active" : ""}"
         ?disabled=${!hasAction}
-        @click=${(ev: Event) => this._handleChipAction(c, "tap", ev)}
-        @contextmenu=${(ev: Event) => { ev.preventDefault(); this._handleChipAction(c, "hold", ev); }}
-        @dblclick=${(ev: Event) => this._handleChipAction(c, "double_tap", ev)}
+        @click=${(ev: Event) => this._handleChipTap(c, ev)}
       >
         ${c.icon
           ? html`<ha-icon icon=${c.icon}></ha-icon>`
