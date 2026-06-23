@@ -54,6 +54,8 @@ Entry point: `src/morphic.ts` → Rollup → `dist/morphic.js` (single ES module
 - Use `bindActionHandler()` from `src/shared/actions.ts` for tap/hold/double-tap on interactive elements.
 - Use `localize()` from `src/shared/localize.ts` for all user-facing strings (EN + DE supported).
 - Register the card in `src/morphic.ts` (import + `registerCustomCard()`).
+- **HA 2026.6 entity picker**: add `getEntitySuggestion` to the `registerCustomCard()` call so the card appears in HA's "By entity" card picker. Return `null` for unsupported entities, or a `{ config }` object with the entity pre-populated. Only cards with a primary entity need this (not separators, room cards, etc.).
+- **Naming convention**: card names use `"Morphic - Card Name"` format (with dash separator).
 
 ### Sections-first dynamic height (critical)
 
