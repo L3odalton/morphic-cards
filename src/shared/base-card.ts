@@ -69,7 +69,7 @@ export abstract class MorphicCard<
         background-image: var(--morphic-accent-fill);
         color: var(--morphic-on-surface);
         overflow: clip;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.1);
       }
     `,
   ];
