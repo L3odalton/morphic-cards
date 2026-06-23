@@ -13,6 +13,12 @@ const strings: Record<string, Record<string, string>> = {
     closed: "Closed",
     home: "Home",
     away: "Away",
+    locked: "Locked",
+    unlocked: "Unlocked",
+    locking: "Locking…",
+    unlocking: "Unlocking…",
+    jammed: "Jammed",
+    confirm_action: "Are you sure?",
   },
   de: {
     now: "Aktuell",
@@ -25,6 +31,12 @@ const strings: Record<string, Record<string, string>> = {
     closed: "Geschlossen",
     home: "Zuhause",
     away: "Abwesend",
+    locked: "Gesperrt",
+    unlocked: "Entsperrt",
+    locking: "Sperrt…",
+    unlocking: "Entsperrt…",
+    jammed: "Blockiert",
+    confirm_action: "Bist du sicher?",
   },
 };
 

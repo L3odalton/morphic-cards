@@ -5,6 +5,8 @@
 import { MorphicCard } from "./shared/base-card";
 import "./editors/trv-editor";
 import "./cards/trv-card";
+import "./editors/lock-editor";
+import "./cards/lock-card";
 import "./editors/room-editor";
 import "./cards/room-card";
 import "./editors/separator-editor";
@@ -42,6 +44,14 @@ MorphicCard.registerCustomCard({
   name: "Morphic Room Card",
   description:
     "Navigable room tile with status chips, climate readouts, and tap-to-navigate.",
+  documentationURL: "https://github.com/morphic/morphic-cards",
+});
+
+MorphicCard.registerCustomCard({
+  type: "morphic-lock-card",
+  name: "Morphic Lock Card",
+  description:
+    "Compact lock card with optional inline confirmation overlay, status chips, and full action support.",
   documentationURL: "https://github.com/morphic/morphic-cards",
 });
 
