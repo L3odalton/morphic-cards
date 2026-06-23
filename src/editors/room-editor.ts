@@ -42,7 +42,6 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
         schema: [
           { name: "tap_action", selector: { ui_action: {} } },
           { name: "hold_action", selector: { ui_action: {} } },
-          { name: "double_tap_action", selector: { ui_action: {} } },
         ],
       },
       {
@@ -88,7 +87,6 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
       humidity_entity: "Humidity sensor",
       tap_action: "Tap action",
       hold_action: "Hold action",
-      double_tap_action: "Double-tap action",
       color: "Accent override",
       color_key: "Color key",
       harmonize: "Harmonize to theme",
@@ -250,13 +248,6 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
           .value=${chip.hold_action}
           .label=${"Hold action"}
           @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "hold_action", ev)}
-        ></ha-selector>
-        <ha-selector
-          .hass=${this.hass}
-          .selector=${{ ui_action: {} }}
-          .value=${chip.double_tap_action}
-          .label=${"Double-tap action"}
-          @value-changed=${(ev: CustomEvent) => this._chipActionChanged(index, "double_tap_action", ev)}
         ></ha-selector>
       </div>
     `;

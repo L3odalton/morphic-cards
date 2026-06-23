@@ -82,7 +82,6 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
         schema: [
           { name: "tap_action", selector: { ui_action: {} } },
           { name: "hold_action", selector: { ui_action: {} } },
-          { name: "double_tap_action", selector: { ui_action: {} } },
         ],
       },
       {
@@ -132,7 +131,6 @@ export class MorphicTrvCardEditor extends MorphicEditorBase<TrvCardConfig> {
       window_entity: "Window / contact entity",
       tap_action: "Tap action",
       hold_action: "Hold action",
-      double_tap_action: "Double-tap action",
       color: "Accent override",
       color_key: "Color key",
       harmonize: "Harmonize to theme",

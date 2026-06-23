@@ -43,7 +43,6 @@ export class MorphicPersonCardEditor extends MorphicEditorBase<PersonCardConfig>
         schema: [
           { name: "tap_action", selector: { ui_action: {} } },
           { name: "hold_action", selector: { ui_action: {} } },
-          { name: "double_tap_action", selector: { ui_action: {} } },
         ],
       },
       {
@@ -82,7 +81,6 @@ export class MorphicPersonCardEditor extends MorphicEditorBase<PersonCardConfig>
       bubble_1_color: "Color override (auto from state if empty)",
       tap_action: "Tap action",
       hold_action: "Hold action",
-      double_tap_action: "Double-tap action",
       icon: "Icon (defaults to entity icon / avatar)",
       color: "Accent override",
       color_key: "Color key",

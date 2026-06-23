@@ -179,32 +179,21 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
       return;
     }
     if (action.action === "none") return;
-    this._dispatchAction("tap");
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "toggle" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "tap");
   }
 
   private _handleIconHold(): void {
     const action = this._config?.hold_action ?? { action: "more-info" as const };
     if (action.action === "none") return;
-    this._dispatchAction("hold");
-  }
-
-  private _handleIconDoubleTap(): void {
-    const action = this._config?.double_tap_action ?? { action: "none" as const };
-    if (action.action === "none") return;
-    this._dispatchAction("double_tap");
-  }
-
-  private _dispatchAction(action: "tap" | "hold" | "double_tap"): void {
-    fireAction(
-      this,
-      {
-        entity: this._config?.entity,
-        tap_action: this._config?.tap_action ?? { action: "toggle" },
-        hold_action: this._config?.hold_action ?? { action: "more-info" },
-        double_tap_action: this._config?.double_tap_action ?? { action: "none" },
-      },
-      action,
-    );
+    fireAction(this, {
+      entity: this._config?.entity,
+      tap_action: this._config?.tap_action ?? { action: "toggle" },
+      hold_action: this._config?.hold_action ?? { action: "more-info" },
+    }, "hold");
   }
 
   protected override firstUpdated(): void {
@@ -226,7 +215,6 @@ export class MorphicTrvCard extends MorphicCard<TrvCardConfig> {
       btn,
       () => this._handleIconTap(),
       () => this._handleIconHold(),
-      () => this._handleIconDoubleTap(),
     );
   }
 
