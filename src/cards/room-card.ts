@@ -21,6 +21,7 @@ export interface RoomChipConfig {
 }
 
 export interface RoomCardConfig extends MorphicBaseConfig {
+  area?: string;
   icon?: string;
   name?: string;
   temperature_entity?: string;
@@ -40,8 +41,6 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
   static getStubConfig(_hass: HomeAssistant): RoomCardConfig {
     return {
       type: "custom:morphic-room-card",
-      name: "Living Room",
-      icon: "mdi:sofa",
       tap_action: { action: "navigate", navigation_path: "/" },
     };
   }
@@ -54,10 +53,31 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
     return 2;
   }
 
+  protected override resolveColorKey(): string {
+    return this._config?.color_key || this._config?.name || this._area?.name || this._config?.type || "morphic";
+  }
+
   // ---- Helpers --------------------------------------------------------------
 
+  private get _area() {
+    const id = this._config?.area;
+    return id ? this.hass?.areas?.[id] : undefined;
+  }
+
   private get resolvedIcon(): string {
-    return this._config?.icon ?? "mdi:door-open";
+    return this._config?.icon || this._area?.icon || "mdi:door-open";
+  }
+
+  private get resolvedName(): string {
+    return this._config?.name || this._area?.name || "Room";
+  }
+
+  private get resolvedTempEntity(): string | undefined {
+    return this._config?.temperature_entity || this._area?.temperature_entity_id || undefined;
+  }
+
+  private get resolvedHumEntity(): string | undefined {
+    return this._config?.humidity_entity || this._area?.humidity_entity_id || undefined;
   }
 
 
@@ -113,17 +133,15 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
   // ---- Render ---------------------------------------------------------------
 
   protected renderContent(): TemplateResult {
-    const name = this._config?.name ?? "Room";
+    const name = this.resolvedName;
     const icon = this.resolvedIcon;
     const shape = shapeForActive(false);
     const chips = this._config?.chips ?? [];
 
-    const tempState = this._config?.temperature_entity
-      ? this.hass?.states[this._config.temperature_entity]
-      : undefined;
-    const humState = this._config?.humidity_entity
-      ? this.hass?.states[this._config.humidity_entity]
-      : undefined;
+    const tempId = this.resolvedTempEntity;
+    const humId = this.resolvedHumEntity;
+    const tempState = tempId ? this.hass?.states[tempId] : undefined;
+    const humState = humId ? this.hass?.states[humId] : undefined;
 
     const readings: string[] = [];
     if (tempState && !isUnavailable(tempState)) {
@@ -189,7 +207,7 @@ export class MorphicRoomCard extends MorphicCard<RoomCardConfig> {
     css`
       .morphic-root {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         padding: 14px 16px;
       }
 

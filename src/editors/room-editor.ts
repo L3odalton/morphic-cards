@@ -15,7 +15,8 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
 
   protected override schema(): HaFormSchema[] {
     return [
-      { name: "name", required: true, selector: { text: {} } },
+      { name: "area", selector: { area: {} } },
+      { name: "name", selector: { text: {} } },
       { name: "icon", selector: { icon: {} } },
       {
         type: "expandable",
@@ -80,8 +81,9 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
 
   protected override labels(): Record<string, string> {
     return {
-      name: "Room name",
-      icon: "Room icon",
+      area: "Area",
+      name: "Name override",
+      icon: "Icon override",
       temperature_entity: "Temperature sensor",
       humidity_entity: "Humidity sensor",
       tap_action: "Tap action",
@@ -97,6 +99,10 @@ export class MorphicRoomCardEditor extends MorphicEditorBase<RoomCardConfig> {
 
   protected override helpers(): Record<string, string> {
     return {
+      name: "Overrides the area name if set.",
+      icon: "Overrides the area icon if set.",
+      temperature_entity: "Overrides the area's temperature sensor if set.",
+      humidity_entity: "Overrides the area's humidity sensor if set.",
       tap_action:
         "Default: navigate. Set the navigation path to open a Bubble Card pop-up or another view.",
       color:
