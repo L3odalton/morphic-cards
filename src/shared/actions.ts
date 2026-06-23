@@ -1,6 +1,10 @@
 // HA-native action handling for Morphic cards.
 // Fires `hass-action` events that the Lovelace framework intercepts and handles,
 // giving us more-info, toggle, navigate, call-service, url, etc. for free.
+//
+// Hold detection follows the HA pattern: press starts a timer, if the user
+// releases AFTER the threshold the hold action fires on release. If they
+// release before, the tap action fires on click.
 
 import { fireEvent } from "./ha";
 
@@ -46,18 +50,26 @@ export function bindActionHandler(
     if (onHold) {
       holdTimer = setTimeout(() => {
         held = true;
-        onHold();
       }, HOLD_MS);
     }
   };
 
   const pointerUp = () => {
     clearTimeout(holdTimer);
+    if (held) {
+      onHold?.();
+    }
   };
 
   const click = () => {
-    if (!held) onTap();
+    if (held) {
+      held = false;
+      return;
+    }
+    onTap();
   };
+
+  const prevent = (e: Event) => e.preventDefault();
 
   const dblClick = onDoubleTap
     ? (e: Event) => {
@@ -69,7 +81,7 @@ export function bindActionHandler(
   element.addEventListener("pointerdown", pointerDown);
   element.addEventListener("pointerup", pointerUp);
   element.addEventListener("pointercancel", pointerUp);
-  element.addEventListener("contextmenu", (e) => e.preventDefault());
+  element.addEventListener("contextmenu", prevent);
   element.addEventListener("click", click);
   if (dblClick) element.addEventListener("dblclick", dblClick);
 
@@ -78,6 +90,7 @@ export function bindActionHandler(
     element.removeEventListener("pointerdown", pointerDown);
     element.removeEventListener("pointerup", pointerUp);
     element.removeEventListener("pointercancel", pointerUp);
+    element.removeEventListener("contextmenu", prevent);
     element.removeEventListener("click", click);
     if (dblClick) element.removeEventListener("dblclick", dblClick);
   };

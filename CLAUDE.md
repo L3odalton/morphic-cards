@@ -51,9 +51,11 @@ Entry point: `src/morphic.ts` → Rollup → `dist/morphic.js` (single ES module
 - Implement `getGridOptions()` with sensible defaults + `min_columns` / `min_rows`.
 - Provide `static getConfigElement()`, `static getStubConfig()`, register via `registerMorphicCard()`.
 - Use inherited features: `this.accent` / `this.colorKey` for accents, `var(--morphic-accent-fill)` for gradient, `iconShape` for circle↔squircle morph.
-- Use `bindActionHandler()` from `src/shared/actions.ts` for tap/hold/double-tap on interactive elements.
+- Use `bindActionHandler()` from `src/shared/actions.ts` for tap/hold on the card's main interactive element. Bind in `firstUpdated()`, clean up in `disconnectedCallback()`. Hold fires on **release** after 500ms threshold (HA pattern). Chips use simple `@click` handlers — hold/double-tap not implemented on chips.
 - Use `localize()` from `src/shared/localize.ts` for all user-facing strings (EN + DE supported).
 - Register the card in `src/morphic.ts` (import + `registerCustomCard()`).
+- **HA 2026.6 entity picker**: add `getEntitySuggestion` to the `registerCustomCard()` call so the card appears in HA's "By entity" card picker. Return `null` for unsupported entities, or a `{ config }` object with the entity pre-populated. Only cards with a primary entity need this (not separators, room cards, etc.).
+- **Naming convention**: card names use `"Morphic - Card Name"` format (with dash separator).
 
 ### Sections-first dynamic height (critical)
 
@@ -83,7 +85,7 @@ Use `:host([data-height="medium"])` selectors in your card's CSS to scale layout
 3. **Circle ↔ squircle icon-morph** for OFF/ON states.
 4. **Sections-first** responsive layout via `getGridOptions()` + width/height ResizeObserver buckets.
 5. Polished **ha-form GUI editor** with live preview + built-in Card-Mod section.
-6. **Tap/hold/double-tap actions** via `src/shared/actions.ts` (fires HA-native `hass-action` events).
+6. **Tap/hold actions** via `src/shared/actions.ts` (fires HA-native `hass-action` events). Hold fires on release after 500ms threshold.
 7. **i18n** via `src/shared/localize.ts` (EN + DE; add languages by extending the `strings` map).
 8. **SSH/SFTP** dev/deploy tooling.
 

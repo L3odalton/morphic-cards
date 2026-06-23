@@ -95,12 +95,18 @@ export interface LovelaceCardEditor extends HTMLElement {
   setConfig(config: LovelaceCardConfig): void;
 }
 
+export interface CardSuggestion {
+  config: LovelaceCardConfig;
+  label?: string;
+}
+
 export interface CustomCardEntry {
   type: string;
   name: string;
   description?: string;
   preview?: boolean;
   documentationURL?: string;
+  getEntitySuggestion?: (hass: HomeAssistant, entityId: string) => CardSuggestion | CardSuggestion[] | null;
 }
 
 declare global {
